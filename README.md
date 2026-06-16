@@ -8,6 +8,8 @@
 
 This project was built to visually and mathematically track the rapid urban expansion of Rajshahi city over the last three decades. It transforms dense, complex geospatial satellite data into an elegant, interactive, and easy-to-understand web experience.
 
+*Note: This entire application, including the UI design, mapping logic, and data integration, was built collaboratively using AI via Vibecoding.*
+
 By utilizing high-contrast color palettes and luxury glassmorphism UI elements, the observatory allows users to scrub through time and watch the city's peri-urban sprawl and infrastructural density evolve, stacked layer upon layer.
 
 ## 🎯 Objective
