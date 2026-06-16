@@ -1,0 +1,4 @@
+venv_raj/
+__pycache__/
+*.pyc
+.DS_Store

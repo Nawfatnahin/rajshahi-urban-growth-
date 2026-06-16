@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Rajshahi Urban Growth</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Turf.js for Area Calculation -->
+  <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            serif: ['Playfair Display', 'serif'],
+          },
+          colors: {
+            club: {
+              base: '#121212',
+              surface: '#1E1E1E',
+              gold: '#D4AF37',
+              brass: '#C49A6C',
+              muted: '#888888'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body { margin: 0; padding: 0; background: #121212; overflow: hidden; }
+    #map { position: absolute; top: 0; bottom: 0; width: 100%; z-index: 10; }
+    
+    /* Increased brightness for ESRI base map */
+    .leaflet-tile-pane { filter: brightness(1.0) saturate(1.1); }
+    
+    /* Smooth transition for vector polygons */
+    path.leaflet-interactive {
+      transition: fill-opacity 0.4s ease, opacity 0.4s ease, fill 0.4s ease, stroke 0.4s ease;
+    }
+    
+    /* Scrollbar hidden for sleekness */
+    ::-webkit-scrollbar { width: 0px; background: transparent; }
+    
+    .glass-panel {
+      background: rgba(18, 18, 18, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(212, 175, 55, 0.15);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    }
+    
+    /* Hide/Show Transition Classes - Leaving a sliver visible so it can easily be clicked to unhide */
+    .panel-transition { transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease; }
+    .hidden-left { transform: translateX(-100%); }
+    .hidden-right { transform: translateX(100%); }
+    .hidden-modal { opacity: 0; pointer-events: none; transform: scale(0.95); }
+  </style>
+</head>
+<body class="text-white font-sans antialiased">
+
+  <!-- Map Container -->
+  <div id="map"></div>
+
+  <!-- Header -->
+  <div class="absolute top-6 left-6 z-40 glass-panel px-6 py-4 rounded-2xl pointer-events-auto">
+    <h1 class="font-serif text-5xl font-bold text-white tracking-wide drop-shadow-lg">Rajshahi<span class="text-club-gold">.</span></h1>
+    <p class="text-club-muted text-sm mt-2 tracking-widest uppercase font-semibold">Urban Evolution</p>
+  </div>
+
+  <!-- Help Button (Bottom Left) -->
+  <button id="help-btn" class="absolute bottom-6 left-6 z-40 w-20 h-20 rounded-full glass-panel flex items-center justify-center text-club-gold hover:text-white hover:bg-club-gold transition-colors duration-300 shadow-xl cursor-pointer">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+  </button>
+
+  <!-- Left Stats Panel Wrapper -->
+  <div class="absolute top-40 left-6 z-40 flex items-start">
+    <!-- Main Panel -->
+    <div id="stats-panel" class="glass-panel w-[400px] rounded-2xl p-8 text-base relative overflow-visible flex flex-col panel-transition">
+      <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-club-gold to-transparent rounded-t-2xl"></div>
+      
+      <!-- Toggle Button -->
+      <button id="toggle-stats-btn" class="absolute -right-5 top-5 glass-panel w-10 h-10 rounded-full flex items-center justify-center text-club-gold hover:text-white transition-transform z-50 shadow-lg cursor-pointer">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+      </button>
+
+      <h2 class="font-serif text-3xl text-club-gold mb-6">Diagnostic Data</h2>
+      
+      <div class="mb-8">
+        <div class="text-club-muted uppercase tracking-widest text-sm mb-2">Current Extent</div>
+        <div class="flex items-baseline gap-2">
+          <span id="area-value" class="text-6xl font-bold font-serif text-white">--</span>
+          <span class="text-club-gold text-xl">sq km</span>
+        </div>
+      </div>
+
+      <div class="mb-8">
+        <div class="text-club-muted uppercase tracking-widest text-sm mb-3">Growth Trend</div>
+        <div class="h-20 w-full">
+          <canvas id="growthChart"></canvas>
+        </div>
+      </div>
+
+      <div class="border-t border-white/10 pt-6 mt-auto">
+        <h3 class="text-club-gold uppercase tracking-widest text-xs mb-3 font-bold">Project Insight</h3>
+        <p class="text-white/80 leading-relaxed text-sm">
+          A quantitative visualization of Rajshahi's expanding urban footprint. The authentic vector data reflects peri-urban sprawl and infrastructural density mapping.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Bottom Panel Wrapper -->
+  <div class="absolute bottom-6 right-6 z-40 flex items-end">
+    <!-- Main Right Panel -->
+    <div id="right-panel" class="glass-panel rounded-2xl p-6 w-[31rem] flex flex-col items-center panel-transition relative overflow-visible">
+      
+      <!-- Toggle Button -->
+      <button id="toggle-right-btn" class="absolute -left-5 top-5 glass-panel w-10 h-10 rounded-full flex items-center justify-center text-club-gold hover:text-white transition-transform z-50 shadow-lg cursor-pointer">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+      </button>
+
+      <div class="text-center w-full mb-6 relative">
+        <div class="absolute top-0 w-full flex justify-between text-club-muted text-[10px] uppercase tracking-widest px-4">
+          <span>1990</span>
+          <span>2020</span>
+        </div>
+        <div id="year-label" class="font-serif text-6xl text-club-gold font-bold drop-shadow-md">1990</div>
+      </div>
+
+      <div class="w-full flex items-center gap-4 mb-6">
+        <button id="play-btn" class="text-club-gold hover:text-white transition-colors cursor-pointer">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        </button>
+        <input type="range" id="timeline" min="0" max="6" value="0" class="w-full accent-club-gold h-1 bg-white/20 rounded-lg appearance-none cursor-pointer">
+      </div>
+
+      <div class="w-full border-t border-white/10 pt-4">
+        <div class="text-[10px] uppercase tracking-widest text-club-muted mb-3 font-bold">Legend (Urban Footprint)</div>
+        <div id="legend-grid" class="flex flex-wrap gap-x-4 gap-y-2 text-xs">
+          <!-- Dynamically populated by JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tutorial Modal -->
+  <div id="tutorial-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm panel-transition">
+    <div class="glass-panel max-w-2xl w-full rounded-[32px] p-12 relative text-center">
+      <div class="w-24 h-24 mx-auto bg-club-gold/10 rounded-full flex items-center justify-center mb-8 border border-club-gold/30">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-club-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+      </div>
+      <h2 class="font-serif text-5xl text-white mb-6">Rajshahi Observatory</h2>
+      <p class="text-club-muted text-lg mb-10 leading-relaxed max-w-xl mx-auto">
+        Welcome to the diagnostic visualization of Rajshahi's urban growth. 
+        <br><br>
+        <strong>Objective:</strong> Observe the authentic sprawling footprint of the city from 1990 to 2020. 
+        Use the timeline slider below to dynamically render real vectorized spatial data and track exact square-kilometer expansion over time.
+      </p>
+      <button id="close-tutorial" class="w-full py-5 rounded-xl bg-club-gold text-club-base text-lg font-bold tracking-widest uppercase hover:bg-white transition-colors duration-300 shadow-[0_0_20px_rgba(212,175,55,0.4)] cursor-pointer">
+        Enter Map
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // ════════════════════════════════════════════════════════
+    // CONFIG & STATE
+    // ════════════════════════════════════════════════════════
+    const EPOCHS = [1990, 1995, 2000, 2005, 2010, 2015, 2020];
+    const DATA_DIR = './data/';
+    
+    // Aesthetic Color Scale (Distinct vibrant colors for maximum visual differentiation)
+    const EPOCH_COLORS = [
+      '#00e5ff', // 1990: Cyan
+      '#39ff14', // 1995: Neon Green
+      '#ffe600', // 2000: Yellow
+      '#ff7300', // 2005: Orange
+      '#ff0055', // 2010: Pink/Red
+      '#bc13fe', // 2015: Purple
+      '#ff0000'  // 2020: Bright Red
+    ];
+
+    let currentEpochIndex = 0;
+    let isPlaying = false;
+    let playInterval = null;
+    let layerCache = {};
+
+    // Track area data for chart
+    let areaData = [null, null, null, null, null, null, null];
+    let chartInstance = null;
+
+    // ════════════════════════════════════════════════════════
+    // UI ELEMENTS
+    // ════════════════════════════════════════════════════════
+    const yearLabel = document.getElementById('year-label');
+    const areaValue = document.getElementById('area-value');
+    const timeline = document.getElementById('timeline');
+    const playBtn = document.getElementById('play-btn');
+    const legendGrid = document.getElementById('legend-grid');
+    
+    // Modals & Panels
+    const tutorialModal = document.getElementById('tutorial-modal');
+    const helpBtn = document.getElementById('help-btn');
+    const closeTutorialBtn = document.getElementById('close-tutorial');
+    
+    const statsPanel = document.getElementById('stats-panel');
+    const toggleStatsBtn = document.getElementById('toggle-stats-btn');
+    
+    const rightPanel = document.getElementById('right-panel');
+    const toggleRightBtn = document.getElementById('toggle-right-btn');
+
+    // Populate Legend
+    let legendHTML = '';
+    EPOCHS.forEach((yr, idx) => {
+      legendHTML += `
+        <div class="flex items-center gap-2 w-16">
+          <div class="w-4 h-4 rounded-sm border" style="background-color:${EPOCH_COLORS[idx]}66; border-color:${EPOCH_COLORS[idx]}"></div>
+          <span class="text-white/90 font-medium">${yr}</span>
+        </div>
+      `;
+    });
+    legendGrid.innerHTML = legendHTML;
+
+    // Toggle interactions
+    closeTutorialBtn.addEventListener('click', () => tutorialModal.classList.add('hidden-modal'));
+    helpBtn.addEventListener('click', () => tutorialModal.classList.remove('hidden-modal'));
+
+    toggleStatsBtn.addEventListener('click', () => {
+      statsPanel.classList.toggle('hidden-left');
+      const svg = toggleStatsBtn.querySelector('svg');
+      if(statsPanel.classList.contains('hidden-left')) {
+        svg.classList.add('rotate-180');
+      } else {
+        svg.classList.remove('rotate-180');
+      }
+    });
+
+    toggleRightBtn.addEventListener('click', () => {
+      rightPanel.classList.toggle('hidden-right');
+      const svg = toggleRightBtn.querySelector('svg');
+      if(rightPanel.classList.contains('hidden-right')) {
+        svg.classList.add('rotate-180');
+      } else {
+        svg.classList.remove('rotate-180');
+      }
+    });
+
+    // ════════════════════════════════════════════════════════
+    // MAP INITIALIZATION
+    // ════════════════════════════════════════════════════════
+    const map = L.map('map', {
+      center: [24.3745, 88.6042],
+      zoom: 13,
+      zoomControl: false,
+      attributionControl: true
+    });
+
+    // ESRI World Imagery Basemap
+    L.tileLayer(
+      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      {
+        attribution: 'Tiles &copy; Esri',
+        maxZoom: 19,
+        minZoom: 8
+      }
+    ).addTo(map);
+
+    // Soft dark wash overlay to keep map bright but text readable
+    L.rectangle([[-90, -180], [90, 180]], {
+      color: 'none',
+      fillColor: '#000000',
+      fillOpacity: 0.15,
+      interactive: false
+    }).addTo(map);
+
+    // ════════════════════════════════════════════════════════
+    // CHART INITIALIZATION
+    // ════════════════════════════════════════════════════════
+    function initChart() {
+      const ctx = document.getElementById('growthChart').getContext('2d');
+      chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: EPOCHS,
+          datasets: [{
+            data: areaData,
+            borderColor: '#D4AF37',
+            borderWidth: 2,
+            pointBackgroundColor: '#121212',
+            pointBorderColor: '#D4AF37',
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            tension: 0.3
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false }, tooltip: { enabled: false } },
+          scales: {
+            x: { display: false },
+            y: { display: false, min: 0 }
+          },
+          layout: { padding: { top: 5, bottom: 5, left: 5, right: 5 } }
+        }
+      });
+    }
+
+    function updateChart(index, area) {
+      areaData[index] = area;
+      
+      // Highlight the current point
+      const pointColors = areaData.map((_, i) => i === index ? '#ffffff' : '#D4AF37');
+      const pointRadii = areaData.map((_, i) => i === index ? 6 : 4);
+      
+      chartInstance.data.datasets[0].pointBackgroundColor = pointColors;
+      chartInstance.data.datasets[0].pointRadius = pointRadii;
+      chartInstance.update();
+    }
+
+    // ════════════════════════════════════════════════════════
+    // DATA LOADING & RENDERING
+    // ════════════════════════════════════════════════════════
+    async function loadEpochLayer(index) {
+      if (layerCache[index]) return layerCache[index];
+
+      const year = EPOCHS[index];
+      const url = `${DATA_DIR}ghsl_${year}_raj.geojson`;
+
+      let geojsonData;
+      try {
+        const resp = await fetch(url);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        geojsonData = await resp.json();
+      } catch (e) {
+        console.error("Failed to load", year, e);
+        return null;
+      }
+
+      // Calculate area dynamically using turf.js
+      const areaSqMeters = turf.area(geojsonData);
+      const areaSqKm = (areaSqMeters / 1e6).toFixed(1);
+
+      const color = EPOCH_COLORS[index];
+
+      const layer = L.geoJSON(geojsonData, {
+        style: {
+          color: color,
+          weight: 1.0,
+          opacity: 0.3,
+          fillColor: color,
+          fillOpacity: 0.1
+        }
+      });
+
+      // Custom opacity control for transitions
+      layer.setOpacity = function(opacity) {
+        this.setStyle({
+          opacity: opacity === 0 ? 0 : 0.3,
+          fillOpacity: opacity === 0 ? 0 : 0.1
+        });
+      };
+
+      layerCache[index] = { layer, area: areaSqKm, color: color };
+      return layerCache[index];
+    }
+
+    async function setEpoch(index) {
+      currentEpochIndex = index;
+      const year = EPOCHS[index];
+      
+      yearLabel.textContent = year;
+      timeline.value = index;
+
+      // Hide FUTURE layers
+      Object.keys(layerCache).forEach(key => {
+        const i = parseInt(key, 10);
+        const obj = layerCache[i];
+        if(obj && obj.layer && map.hasLayer(obj.layer)) {
+          if (i > index) {
+            obj.layer.setOpacity(0);
+            setTimeout(() => {
+              if (map.hasLayer(obj.layer) && currentEpochIndex < i) map.removeLayer(obj.layer);
+            }, 400);
+          }
+        }
+      });
+
+      // Show PAST and CURRENT layers (stack them)
+      let currentObj = null;
+      for (let i = 0; i <= index; i++) {
+        const obj = await loadEpochLayer(i);
+        if (obj) {
+          if (!map.hasLayer(obj.layer)) {
+            obj.layer.setOpacity(0);
+            obj.layer.addTo(map);
+          }
+          // Make visible
+          setTimeout(() => {
+             obj.layer.setOpacity(1);
+             obj.layer.bringToBack(); // Puts the newest/largest layer at the back of the vector pane
+          }, 50);
+          
+          if (i === index) currentObj = obj;
+        }
+      }
+
+      if (currentObj) {
+        areaValue.textContent = currentObj.area;
+        updateChart(index, parseFloat(currentObj.area));
+      } else {
+        areaValue.textContent = "--";
+      }
+    }
+
+    // ════════════════════════════════════════════════════════
+    // TIMELINE CONTROLS
+    // ════════════════════════════════════════════════════════
+    timeline.addEventListener('input', (e) => {
+      pauseTimeline();
+      setEpoch(parseInt(e.target.value, 10));
+    });
+
+    function playTimeline() {
+      isPlaying = true;
+      playBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>`;
+      
+      if (currentEpochIndex >= EPOCHS.length - 1) {
+        setEpoch(0);
+      }
+      
+      playInterval = setInterval(() => {
+        if (currentEpochIndex >= EPOCHS.length - 1) {
+          pauseTimeline();
+        } else {
+          setEpoch(currentEpochIndex + 1);
+        }
+      }, 1500);
+    }
+
+    function pauseTimeline() {
+      isPlaying = false;
+      playBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`;
+      clearInterval(playInterval);
+    }
+
+    playBtn.addEventListener('click', () => {
+      if (isPlaying) pauseTimeline();
+      else playTimeline();
+    });
+
+    // ════════════════════════════════════════════════════════
+    // INIT
+    // ════════════════════════════════════════════════════════
+    window.addEventListener('DOMContentLoaded', async () => {
+      initChart();
+      // Pre-load all data to populate the growth chart immediately
+      for(let i = 0; i < EPOCHS.length; i++) {
+        const d = await loadEpochLayer(i);
+        if(d) updateChart(i, parseFloat(d.area));
+      }
+      setEpoch(0);
+    });
+  </script>
+</body>
+</html>
