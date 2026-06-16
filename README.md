@@ -2,7 +2,7 @@
 
 > A quantitative, aesthetic visualization of Rajshahi's expanding urban footprint from 1990 to 2020.
 
-**[Live Observatory](https://nawfatnahin.github.io/rajshahi-urban-growth-/)** *(Note: Link will be active once GitHub Pages is deployed)*
+**[Live Observatory](https://nawfatnahin.github.io/rajshahi-urban-growth-/)**
 
 ## 📖 About the Project
 
