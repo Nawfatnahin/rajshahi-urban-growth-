@@ -26,9 +26,14 @@ Urban growth is often discussed but rarely "felt." Reading that a city grew by 2
 4. **Interactive Map:** You can drag, pan, and zoom around the map to explore specific neighborhoods and how they developed over the decades.
 5. **Toggle Panels:** If you want an unobstructed view of the map, click the small arrow buttons attached to the corners of the floating panels to slide them off-screen.
 
+## 📡 Data Collection & Methodology
+
+The authentic geospatial data powering this observatory is derived from the **Global Human Settlement Layer (GHSL)**, an open-source initiative maintained by the **European Commission's Joint Research Centre (JRC)**. 
+
+Specifically, this uses the `GHS_BUILT_S` (Built-up Surface) multitemporal dataset. This data is produced by running advanced machine learning algorithms over decades of massive satellite imagery archives (including Landsat and Sentinel). To adapt it for this lightweight web visualization, the dense raster pixel grids were mathematically vectorized into precise GeoJSON polygons.
+
 ## ⚙️ Technical Stack
 
 - **Frontend:** HTML5, Tailwind CSS
 - **Mapping:** Leaflet.js over ESRI World Imagery
 - **Geospatial Analysis:** Turf.js (Real-time area calculation)
-- **Data Source:** Global Human Settlement Layer (GHSL) by the European Commission's Joint Research Centre. The raster data was systematically converted into GeoJSON vectors for precise, lightweight web rendering.
