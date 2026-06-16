@@ -78,11 +78,6 @@
   <!-- Map Container -->
   <div id="map"></div>
 
-  <!-- Map Watermark -->
-  <div class="absolute inset-0 z-20 flex items-center justify-center pointer-events-none overflow-hidden">
-    <h1 class="font-serif text-[15rem] font-bold text-white/5 tracking-widest uppercase select-none drop-shadow-2xl mix-blend-overlay">Rajshahi</h1>
-  </div>
-
   <!-- Header -->
   <div class="absolute top-6 left-6 z-40 glass-panel px-6 py-4 rounded-2xl pointer-events-auto">
     <h1 class="font-serif text-5xl font-bold text-white tracking-wide drop-shadow-lg">Rajshahi<span class="text-club-gold">.</span></h1>
@@ -294,6 +289,16 @@
       fillOpacity: 0.15,
       interactive: false
     }).addTo(map);
+
+    // Native Map Watermark (pinned to geographic center)
+    const watermarkIcon = L.divIcon({
+      className: 'custom-map-watermark',
+      html: '<div class="font-serif text-white/20 tracking-[0.5em] uppercase font-bold drop-shadow-2xl select-none mix-blend-overlay pointer-events-none" style="font-size: 8rem; white-space: nowrap; transform: translate(-50%, -50%);">RAJSHAHI</div>',
+      iconSize: [0, 0],
+      iconAnchor: [0, 0]
+    });
+    const watermarkLayer = L.marker([24.3745, 88.6042], { icon: watermarkIcon, interactive: false }).addTo(map);
+    watermarkLayer.setZIndexOffset(-1000); // Behind polygons
 
     // ════════════════════════════════════════════════════════
     // CHART INITIALIZATION
