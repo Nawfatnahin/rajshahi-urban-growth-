@@ -102,23 +102,41 @@
 
       <h2 class="font-serif text-3xl text-club-gold mb-6">Diagnostic Data</h2>
       
-      <div class="mb-8">
+      <!-- Extent + Growth Delta Row -->
+      <div class="mb-6">
         <div class="text-club-muted uppercase tracking-widest text-sm mb-2">Current Extent</div>
-        <div class="flex items-baseline gap-2">
-          <span id="area-value" class="text-6xl font-bold font-serif text-white">--</span>
-          <span class="text-club-gold text-xl">sq km</span>
+        <div class="flex items-baseline gap-2 mb-3">
+          <span id="area-value" class="text-5xl font-bold font-serif text-white">--</span>
+          <span class="text-club-gold text-lg">sq km</span>
+        </div>
+        <!-- Growth from baseline -->
+        <div class="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-3 border border-white/8">
+          <div class="flex-1">
+            <div class="text-[10px] text-club-muted uppercase tracking-widest mb-1">Growth vs 1990</div>
+            <div class="flex items-baseline gap-1">
+              <span id="growth-delta" class="text-2xl font-bold font-serif text-club-gold">--</span>
+              <span class="text-club-gold/70 text-sm">sq km</span>
+            </div>
+          </div>
+          <div class="flex-1 border-l border-white/10 pl-3">
+            <div class="text-[10px] text-club-muted uppercase tracking-widest mb-1">Growth Rate</div>
+            <div class="flex items-baseline gap-1">
+              <span id="growth-pct" class="text-2xl font-bold font-serif text-emerald-400">--</span>
+              <span class="text-emerald-400/70 text-sm">%</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div class="mb-8">
+      <div class="mb-6">
         <div class="text-club-muted uppercase tracking-widest text-sm mb-1">Growth Trend</div>
-        <div class="text-[10px] text-white/40 mb-3 tracking-wide">Area (sq km) · 1990 – 2020</div>
+        <div class="text-[10px] text-white/40 mb-2 tracking-wide">Total urban footprint (sq km) · 1990 – 2020</div>
         <div style="height:140px; width:100%">
           <canvas id="growthChart"></canvas>
         </div>
       </div>
 
-      <div class="border-t border-white/10 pt-6 mt-auto">
+      <div class="border-t border-white/10 pt-5 mt-auto">
         <h3 class="text-club-gold uppercase tracking-widest text-xs mb-3 font-bold">Project Insight</h3>
         <p class="text-white/80 leading-relaxed text-sm">
           A quantitative visualization of Rajshahi's expanding urban footprint. The authentic vector data reflects peri-urban sprawl and infrastructural density mapping.
@@ -137,24 +155,28 @@
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
       </button>
 
-      <div class="text-center w-full mb-6 relative">
-        <div class="absolute top-0 w-full flex justify-between text-club-muted text-[10px] uppercase tracking-widest px-4">
-          <span>1990</span>
-          <span>2020</span>
-        </div>
+      <!-- Big Year Display -->
+      <div class="text-center w-full mb-4">
         <div id="year-label" class="font-serif text-6xl text-club-gold font-bold drop-shadow-md">1990</div>
+        <div id="year-subtitle" class="text-[10px] text-club-muted tracking-widest uppercase mt-1">Urban footprint year</div>
       </div>
 
-      <div class="w-full flex items-center gap-4 mb-6">
+      <!-- Playback + Slider -->
+      <div class="w-full flex items-center gap-4 mb-1">
         <button id="play-btn" class="text-club-gold hover:text-white transition-colors cursor-pointer">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
         </button>
         <input type="range" id="timeline" min="0" max="6" value="0" class="w-full accent-club-gold h-1 bg-white/20 rounded-lg appearance-none cursor-pointer">
       </div>
+      <!-- Range labels directly under slider -->
+      <div class="w-full flex justify-between text-club-muted text-[10px] uppercase tracking-widest px-10 mb-5">
+        <span>1990</span>
+        <span>2020</span>
+      </div>
 
       <div class="w-full border-t border-white/10 pt-4">
-        <div class="text-[10px] uppercase tracking-widest text-club-muted mb-3 font-bold">Legend (Urban Footprint)</div>
-        <div id="legend-grid" class="flex flex-wrap gap-x-4 gap-y-2 text-xs">
+        <div class="text-[10px] uppercase tracking-widest text-club-muted mb-3 font-bold">Legend — Urban Footprint</div>
+        <div id="legend-grid" class="grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
           <!-- Dynamically populated by JS -->
         </div>
       </div>
@@ -228,17 +250,28 @@
     const rightPanel = document.getElementById('right-panel');
     const toggleRightBtn = document.getElementById('toggle-right-btn');
 
-    // Populate Legend
-    let legendHTML = '';
-    EPOCHS.forEach((yr, idx) => {
-      legendHTML += `
-        <div class="flex items-center gap-2 w-16">
-          <div class="w-4 h-4 rounded-sm border" style="background-color:${EPOCH_COLORS[idx]}66; border-color:${EPOCH_COLORS[idx]}"></div>
-          <span class="text-white/90 font-medium">${yr}</span>
-        </div>
-      `;
-    });
-    legendGrid.innerHTML = legendHTML;
+    // Populate Legend — with area values filled in later, and active highlight
+    function buildLegend(activeIndex, areas) {
+      let html = '';
+      EPOCHS.forEach((yr, idx) => {
+        const isActive = idx === activeIndex;
+        const areaText = areas[idx] !== null ? `${areas[idx]} km²` : '…';
+        const activeBorder = isActive ? `border-2 border-white` : `border border-opacity-60`;
+        const activeText = isActive ? 'text-white font-bold' : 'text-white/60 font-medium';
+        const ringStyle = isActive ? `background-color:${EPOCH_COLORS[idx]}; box-shadow:0 0 6px ${EPOCH_COLORS[idx]}88` : `background-color:${EPOCH_COLORS[idx]}55; border-color:${EPOCH_COLORS[idx]}`;
+        html += `
+          <div class="flex items-center gap-2 py-1 px-2 rounded-lg transition-all duration-300 ${isActive ? 'bg-white/8' : ''}">
+            <div class="w-3 h-3 rounded-full flex-shrink-0" style="${ringStyle}"></div>
+            <div class="flex flex-col leading-none">
+              <span class="${activeText} text-[11px]">${yr}</span>
+              <span class="text-[9px] text-club-muted mt-0.5">${areaText}</span>
+            </div>
+          </div>
+        `;
+      });
+      legendGrid.innerHTML = html;
+    }
+    buildLegend(0, areaData);
 
     // Toggle interactions
     closeTutorialBtn.addEventListener('click', () => tutorialModal.classList.add('hidden-modal'));
@@ -365,7 +398,9 @@
             },
             y: {
               display: true,
-              min: 0,
+              // Don't start at 0 — zoom in to the 410–475 range to make growth visible
+              suggestedMin: 410,
+              suggestedMax: 475,
               position: 'left',
               ticks: {
                 color: 'rgba(255,255,255,0.45)',
@@ -388,6 +423,16 @@
     function updateChart(index, area) {
       areaData[index] = area;
 
+      // Dynamically tighten y-axis range as data loads
+      const knownValues = areaData.filter(v => v !== null);
+      if (knownValues.length > 0) {
+        const minVal = Math.min(...knownValues);
+        const maxVal = Math.max(...knownValues);
+        const padding = Math.max((maxVal - minVal) * 0.4, 5);
+        chartInstance.options.scales.y.suggestedMin = Math.floor(minVal - padding);
+        chartInstance.options.scales.y.suggestedMax = Math.ceil(maxVal + padding);
+      }
+
       // Color each point with its epoch color; highlight the active one with white ring
       const pointBg   = areaData.map((v, i) => v !== null ? EPOCH_COLORS[i] : 'transparent');
       const pointBord = areaData.map((_, i) => i === index ? '#ffffff' : '#D4AF37');
@@ -399,6 +444,9 @@
       chartInstance.data.datasets[0].pointRadius          = pointRad;
       chartInstance.data.datasets[0].pointBorderWidth     = pointBW;
       chartInstance.update();
+
+      // Refresh legend with latest area data
+      buildLegend(index, areaData);
     }
 
     // ════════════════════════════════════════════════════════
@@ -506,6 +554,21 @@
 
       if (currentObj) {
         areaValue.textContent = currentObj.area;
+
+        // Compute growth delta vs 1990 baseline
+        const baselineObj = layerCache[0];
+        const growthDeltaEl = document.getElementById('growth-delta');
+        const growthPctEl = document.getElementById('growth-pct');
+        if (baselineObj && index > 0) {
+          const delta = (parseFloat(currentObj.area) - parseFloat(baselineObj.area)).toFixed(1);
+          const pct = (((parseFloat(currentObj.area) - parseFloat(baselineObj.area)) / parseFloat(baselineObj.area)) * 100).toFixed(1);
+          growthDeltaEl.textContent = `+${delta}`;
+          growthPctEl.textContent = `+${pct}`;
+        } else {
+          growthDeltaEl.textContent = '—';
+          growthPctEl.textContent = '—';
+        }
+
         updateChart(index, parseFloat(currentObj.area));
       } else {
         areaValue.textContent = "--";
