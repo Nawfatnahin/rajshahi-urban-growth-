@@ -72,6 +72,12 @@
     .hidden-left { transform: translateX(-100%); }
     .hidden-right { transform: translateX(100%); }
     .hidden-modal { opacity: 0; pointer-events: none; transform: scale(0.95); }
+
+    /* Glow filter for dot-cluster markers */
+    .epoch-dot path {
+      filter: drop-shadow(0 0 3px currentColor);
+      transition: r 0.4s ease, fill-opacity 0.4s ease, opacity 0.4s ease;
+    }
   </style>
 </head>
 <body class="text-white font-sans antialiased">
@@ -469,39 +475,66 @@
         return null;
       }
 
-      // Calculate area dynamically using turf.js
+      // Calculate total area dynamically using turf.js
       const areaSqMeters = turf.area(geojsonData);
       const areaSqKm = (areaSqMeters / 1e6).toFixed(1);
 
       const color = EPOCH_COLORS[index];
-      // Older layers: lower fill opacity so newer layers stand out prominently
-      // index 0 (1990) = faintest, index 6 (2020) = most opaque
-      const baseFillOpacity = 0.08 + (index * 0.055); // 0.08 → 0.41
-      const baseStrokeOpacity = 0.25 + (index * 0.07); // 0.25 → 0.67
+      // Scale dot opacity: oldest layers slightly transparent, newest fully vivid
+      const dotFillOpacity = 0.45 + (index * 0.05); // 0.45 → 0.75
+      const dotStrokeOpacity = 0.55 + (index * 0.05);
 
-      const layer = L.geoJSON(geojsonData, {
-        style: {
+      // ── DOT-CLUSTER VISUALIZATION ────────────────────────
+      // Each individual polygon in the MultiPolygon is rendered as a
+      // glowing circle at its centroid, sized by the polygon's own area.
+      // This honestly represents detected building clusters — dense city
+      // cores show tight bright dots; sparse peri-urban fringe shows
+      // scattered smaller dots against the satellite imagery.
+      const markerGroup = L.layerGroup();
+
+      const feature = geojsonData.features[0];
+      const geom = feature.geometry;
+      const polygonList = geom.type === 'MultiPolygon'
+        ? geom.coordinates
+        : [geom.coordinates]; // handle plain Polygon fallback
+
+      polygonList.forEach(polygonCoords => {
+        let polyArea = 0;
+        let center = null;
+        try {
+          const poly = turf.polygon(polygonCoords);
+          polyArea = turf.area(poly);          // m²
+          center = turf.centroid(poly);
+        } catch (_) { return; }
+
+        // Radius: sqrt scaling so big patches don't dominate. Min 1.5, max 9 px.
+        const radius = Math.max(1.5, Math.min(9, Math.sqrt(polyArea) / 60));
+        const [lng, lat] = center.geometry.coordinates;
+
+        L.circleMarker([lat, lng], {
+          radius,
           color: color,
-          weight: index === 0 ? 0.6 : 1.2,
-          opacity: baseStrokeOpacity,
+          weight: 0.8,
+          opacity: dotStrokeOpacity,
           fillColor: color,
-          fillOpacity: baseFillOpacity
-        }
+          fillOpacity: dotFillOpacity,
+          // CSS class lets us apply a glow effect via the style block
+          className: `epoch-dot epoch-${index}`
+        }).addTo(markerGroup);
       });
 
-      // Custom opacity control for transitions (show/hide)
-      layer.setOpacity = function(opacity) {
-        if (opacity === 0) {
-          this.setStyle({ opacity: 0, fillOpacity: 0 });
-        } else {
-          this.setStyle({
-            opacity: baseStrokeOpacity,
-            fillOpacity: baseFillOpacity
-          });
-        }
+      // Custom show/hide control (mirrors the old setOpacity API)
+      markerGroup.setOpacity = function(opacity) {
+        this.eachLayer(m => {
+          if (opacity === 0) {
+            m.setStyle({ fillOpacity: 0, opacity: 0 });
+          } else {
+            m.setStyle({ fillOpacity: dotFillOpacity, opacity: dotStrokeOpacity });
+          }
+        });
       };
 
-      layerCache[index] = { layer, area: areaSqKm, color: color };
+      layerCache[index] = { layer: markerGroup, area: areaSqKm, color: color };
       return layerCache[index];
     }
 
