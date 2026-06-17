@@ -310,11 +310,11 @@
       attributionControl: true
     });
 
-    // Google Satellite Basemap
+    // OpenStreetMap (CartoDB Dark Matter) Basemap
     L.tileLayer(
-      'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+      'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
       {
-        attribution: 'Tiles &copy; Google',
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
         maxZoom: 19,
         minZoom: 8
       }
