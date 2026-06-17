@@ -1,6 +1,6 @@
 # Rajshahi Urban Growth Observatory 🏙️
 
-> A quantitative, interactive visualization of Rajshahi's expanding urban footprint from **1990 to 2020**, powered by authentic satellite-derived geospatial data.
+> An interactive, aesthetic web visualization tracking Rajshahi's urban footprint expansion from 1990 to 2020 using geospatial vector data and Leaflet. Built collaboratively with AI.
 
 **[🌐 Live Observatory →](https://nawfatnahin.github.io/rajshahi-urban-growth-/)**
 
