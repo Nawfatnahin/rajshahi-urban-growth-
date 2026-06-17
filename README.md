@@ -148,9 +148,9 @@ Computed urban footprint area for Rajshahi using spherical polygon area calculat
 
 | Layer | Technology |
 |---|---|
-| Frontend | HTML5, Tailwind CSS, Inter & Playfair Display fonts |
+| Frontend | HTML5, Tailwind CSS, Inter & Playfair fonts, Mobile-Responsive UI |
 | Mapping Engine | [Leaflet.js](https://leafletjs.com/) v1.9.4 |
-| Base Imagery | ESRI World Imagery (satellite tiles) |
+| Base Imagery | OpenStreetMap (Standard bright tiles) |
 | Area Calculation | [Turf.js](https://turfjs.org/) v6 (real-time, in-browser) |
 | Statistical Chart | [Chart.js](https://www.chartjs.org/) v4.4.4 |
 | Data Format | GeoJSON (MultiPolygon, one feature per epoch) |
