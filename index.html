@@ -111,8 +111,9 @@
       </div>
 
       <div class="mb-8">
-        <div class="text-club-muted uppercase tracking-widest text-sm mb-3">Growth Trend</div>
-        <div class="h-20 w-full">
+        <div class="text-club-muted uppercase tracking-widest text-sm mb-1">Growth Trend</div>
+        <div class="text-[10px] text-white/40 mb-3 tracking-wide">Area (sq km) · 1990 – 2020</div>
+        <div style="height:140px; width:100%">
           <canvas id="growthChart"></canvas>
         </div>
       </div>
@@ -186,15 +187,16 @@
     const EPOCHS = [1990, 1995, 2000, 2005, 2010, 2015, 2020];
     const DATA_DIR = './data/';
     
-    // Aesthetic Color Scale (Distinct vibrant colors for maximum visual differentiation)
+    // Thermal growth palette: cool (oldest) → warm (newest)
+    // Reading: blue=1990 foundation → through teal/green → yellow/orange → hot red=2020 expansion
     const EPOCH_COLORS = [
-      '#00e5ff', // 1990: Cyan
-      '#39ff14', // 1995: Neon Green
-      '#ffe600', // 2000: Yellow
-      '#ff7300', // 2005: Orange
-      '#ff0055', // 2010: Pink/Red
-      '#bc13fe', // 2015: Purple
-      '#ff0000'  // 2020: Bright Red
+      '#3b82f6', // 1990: Cool Blue (deepest historical base)
+      '#06b6d4', // 1995: Teal
+      '#10b981', // 2000: Emerald Green
+      '#eab308', // 2005: Amber
+      '#f97316', // 2010: Orange
+      '#ef4444', // 2015: Red
+      '#ff1493'  // 2020: Hot Pink/Magenta (most recent, most visible)
     ];
 
     let currentEpochIndex = 0;
@@ -305,6 +307,12 @@
     // ════════════════════════════════════════════════════════
     function initChart() {
       const ctx = document.getElementById('growthChart').getContext('2d');
+
+      // Gradient fill under the line
+      const gradient = ctx.createLinearGradient(0, 0, 0, 130);
+      gradient.addColorStop(0, 'rgba(212, 175, 55, 0.35)');
+      gradient.addColorStop(1, 'rgba(212, 175, 55, 0.00)');
+
       chartInstance = new Chart(ctx, {
         type: 'line',
         data: {
@@ -312,36 +320,84 @@
           datasets: [{
             data: areaData,
             borderColor: '#D4AF37',
-            borderWidth: 2,
-            pointBackgroundColor: '#121212',
+            borderWidth: 2.5,
+            backgroundColor: gradient,
+            fill: true,
+            pointBackgroundColor: EPOCH_COLORS,
             pointBorderColor: '#D4AF37',
-            pointRadius: 4,
-            pointHoverRadius: 6,
-            tension: 0.3
+            pointBorderWidth: 1.5,
+            pointRadius: 5,
+            pointHoverRadius: 8,
+            pointHoverBackgroundColor: '#ffffff',
+            tension: 0.35
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          plugins: { legend: { display: false }, tooltip: { enabled: false } },
-          scales: {
-            x: { display: false },
-            y: { display: false, min: 0 }
+          animation: { duration: 600, easing: 'easeInOutQuart' },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              enabled: true,
+              backgroundColor: 'rgba(18,18,18,0.92)',
+              borderColor: 'rgba(212,175,55,0.5)',
+              borderWidth: 1,
+              titleColor: '#D4AF37',
+              bodyColor: '#ffffff',
+              padding: 10,
+              callbacks: {
+                title: (items) => `Year: ${items[0].label}`,
+                label: (item) => item.raw !== null ? ` ${item.raw} sq km` : ' Loading…'
+              }
+            }
           },
-          layout: { padding: { top: 5, bottom: 5, left: 5, right: 5 } }
+          scales: {
+            x: {
+              display: true,
+              ticks: {
+                color: 'rgba(255,255,255,0.45)',
+                font: { size: 9, family: 'Inter' },
+                maxRotation: 0
+              },
+              grid: { display: false },
+              border: { display: false }
+            },
+            y: {
+              display: true,
+              min: 0,
+              position: 'left',
+              ticks: {
+                color: 'rgba(255,255,255,0.45)',
+                font: { size: 9, family: 'Inter' },
+                maxTicksLimit: 4,
+                callback: (v) => `${v}`
+              },
+              grid: {
+                color: 'rgba(255,255,255,0.06)',
+                drawBorder: false
+              },
+              border: { display: false }
+            }
+          },
+          layout: { padding: { top: 6, bottom: 2, left: 2, right: 6 } }
         }
       });
     }
 
     function updateChart(index, area) {
       areaData[index] = area;
-      
-      // Highlight the current point
-      const pointColors = areaData.map((_, i) => i === index ? '#ffffff' : '#D4AF37');
-      const pointRadii = areaData.map((_, i) => i === index ? 6 : 4);
-      
-      chartInstance.data.datasets[0].pointBackgroundColor = pointColors;
-      chartInstance.data.datasets[0].pointRadius = pointRadii;
+
+      // Color each point with its epoch color; highlight the active one with white ring
+      const pointBg   = areaData.map((v, i) => v !== null ? EPOCH_COLORS[i] : 'transparent');
+      const pointBord = areaData.map((_, i) => i === index ? '#ffffff' : '#D4AF37');
+      const pointRad  = areaData.map((v, i) => v !== null ? (i === index ? 7 : 5) : 0);
+      const pointBW   = areaData.map((_, i) => i === index ? 2.5 : 1.5);
+
+      chartInstance.data.datasets[0].pointBackgroundColor = pointBg;
+      chartInstance.data.datasets[0].pointBorderColor     = pointBord;
+      chartInstance.data.datasets[0].pointRadius          = pointRad;
+      chartInstance.data.datasets[0].pointBorderWidth     = pointBW;
       chartInstance.update();
     }
 
@@ -369,23 +425,31 @@
       const areaSqKm = (areaSqMeters / 1e6).toFixed(1);
 
       const color = EPOCH_COLORS[index];
+      // Older layers: lower fill opacity so newer layers stand out prominently
+      // index 0 (1990) = faintest, index 6 (2020) = most opaque
+      const baseFillOpacity = 0.08 + (index * 0.055); // 0.08 → 0.41
+      const baseStrokeOpacity = 0.25 + (index * 0.07); // 0.25 → 0.67
 
       const layer = L.geoJSON(geojsonData, {
         style: {
           color: color,
-          weight: 1.0,
-          opacity: 0.3,
+          weight: index === 0 ? 0.6 : 1.2,
+          opacity: baseStrokeOpacity,
           fillColor: color,
-          fillOpacity: 0.1
+          fillOpacity: baseFillOpacity
         }
       });
 
-      // Custom opacity control for transitions
+      // Custom opacity control for transitions (show/hide)
       layer.setOpacity = function(opacity) {
-        this.setStyle({
-          opacity: opacity === 0 ? 0 : 0.3,
-          fillOpacity: opacity === 0 ? 0 : 0.1
-        });
+        if (opacity === 0) {
+          this.setStyle({ opacity: 0, fillOpacity: 0 });
+        } else {
+          this.setStyle({
+            opacity: baseStrokeOpacity,
+            fillOpacity: baseFillOpacity
+          });
+        }
       };
 
       layerCache[index] = { layer, area: areaSqKm, color: color };
@@ -414,6 +478,7 @@
       });
 
       // Show PAST and CURRENT layers (stack them)
+      // Order: oldest layers at bottom, current selected year on TOP
       let currentObj = null;
       for (let i = 0; i <= index; i++) {
         const obj = await loadEpochLayer(i);
@@ -422,14 +487,21 @@
             obj.layer.setOpacity(0);
             obj.layer.addTo(map);
           }
-          // Make visible
+          // Bring older layers to back first, then current to front
           setTimeout(() => {
-             obj.layer.setOpacity(1);
-             obj.layer.bringToBack(); // Puts the newest/largest layer at the back of the vector pane
+            obj.layer.setOpacity(1);
+            obj.layer.bringToBack(); // Push all layers down initially
           }, 50);
-          
+
           if (i === index) currentObj = obj;
         }
+      }
+
+      // After all past layers are stacked at back, bring the CURRENT year to the very top
+      if (currentObj) {
+        setTimeout(() => {
+          currentObj.layer.bringToFront();
+        }, 120);
       }
 
       if (currentObj) {
