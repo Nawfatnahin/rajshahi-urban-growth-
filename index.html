@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Rajshahi Urban Growth</title>
   
   <!-- Fonts -->
@@ -79,20 +80,20 @@
   <div id="map"></div>
 
   <!-- Header -->
-  <div class="absolute top-6 left-6 z-40 glass-panel px-6 py-4 rounded-2xl pointer-events-auto">
-    <h1 class="font-serif text-5xl font-bold text-white tracking-wide drop-shadow-lg">Rajshahi<span class="text-club-gold">.</span></h1>
-    <p class="text-club-muted text-sm mt-2 tracking-widest uppercase font-semibold">Urban Evolution</p>
+  <div class="absolute top-4 sm:top-6 left-4 sm:left-6 right-4 sm:right-auto z-40 glass-panel px-4 sm:px-6 py-3 sm:py-4 rounded-2xl pointer-events-auto text-center sm:text-left">
+    <h1 class="font-serif text-4xl sm:text-5xl font-bold text-white tracking-wide drop-shadow-lg">Rajshahi<span class="text-club-gold">.</span></h1>
+    <p class="text-club-muted text-xs sm:text-sm mt-1 sm:mt-2 tracking-widest uppercase font-semibold">Urban Evolution</p>
   </div>
 
-  <!-- Help Button (Bottom Left) -->
-  <button id="help-btn" class="absolute bottom-6 left-6 z-40 w-20 h-20 rounded-full glass-panel flex items-center justify-center text-club-gold hover:text-white hover:bg-club-gold transition-colors duration-300 shadow-xl cursor-pointer">
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+  <!-- Help Button (Top Right on Mobile, Bottom Left on Desktop) -->
+  <button id="help-btn" class="absolute top-4 sm:top-auto sm:bottom-6 right-4 sm:right-auto sm:left-6 z-40 w-12 h-12 sm:w-20 sm:h-20 rounded-full glass-panel flex items-center justify-center text-club-gold hover:text-white hover:bg-club-gold transition-colors duration-300 shadow-xl cursor-pointer">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 sm:h-10 sm:w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
   </button>
 
   <!-- Left Stats Panel Wrapper -->
-  <div class="absolute top-40 left-6 z-40 flex items-start">
+  <div class="absolute top-28 sm:top-40 left-4 sm:left-6 right-4 sm:right-auto z-40 flex items-start">
     <!-- Main Panel -->
-    <div id="stats-panel" class="glass-panel w-[400px] rounded-2xl p-8 text-base relative overflow-visible flex flex-col panel-transition">
+    <div id="stats-panel" class="glass-panel w-full sm:w-[400px] rounded-2xl p-5 sm:p-8 text-sm sm:text-base relative overflow-visible flex flex-col panel-transition">
       <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-club-gold to-transparent rounded-t-2xl"></div>
       
       <!-- Toggle Button -->
@@ -106,8 +107,8 @@
       <div class="mb-6">
         <div class="text-club-muted uppercase tracking-widest text-sm mb-2">Current Extent</div>
         <div class="flex items-baseline gap-2 mb-3">
-          <span id="area-value" class="text-5xl font-bold font-serif text-white">--</span>
-          <span class="text-club-gold text-lg">sq km</span>
+          <span id="area-value" class="text-4xl sm:text-5xl font-bold font-serif text-white">--</span>
+          <span class="text-club-gold text-sm sm:text-lg">sq km</span>
         </div>
         <!-- Growth from baseline -->
         <div class="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-3 border border-white/8">
@@ -146,9 +147,9 @@
   </div>
 
   <!-- Right Bottom Panel Wrapper -->
-  <div class="absolute bottom-6 right-6 z-40 flex items-end">
+  <div class="absolute bottom-4 sm:bottom-6 left-4 right-4 sm:left-auto sm:right-6 z-40 flex items-end">
     <!-- Main Right Panel -->
-    <div id="right-panel" class="glass-panel rounded-2xl p-6 w-[31rem] flex flex-col items-center panel-transition relative overflow-visible">
+    <div id="right-panel" class="glass-panel rounded-2xl p-4 sm:p-6 w-full sm:w-[31rem] flex flex-col items-center panel-transition relative overflow-visible">
       
       <!-- Toggle Button -->
       <button id="toggle-right-btn" class="absolute -left-5 top-5 glass-panel w-10 h-10 rounded-full flex items-center justify-center text-club-gold hover:text-white transition-transform z-50 shadow-lg cursor-pointer">
@@ -156,9 +157,9 @@
       </button>
 
       <!-- Big Year Display -->
-      <div class="text-center w-full mb-4">
-        <div id="year-label" class="font-serif text-6xl text-club-gold font-bold drop-shadow-md">1990</div>
-        <div id="year-subtitle" class="text-[10px] text-club-muted tracking-widest uppercase mt-1">Urban footprint year</div>
+      <div class="text-center w-full mb-2 sm:mb-4">
+        <div id="year-label" class="font-serif text-5xl sm:text-6xl text-club-gold font-bold drop-shadow-md">1990</div>
+        <div id="year-subtitle" class="text-[9px] sm:text-[10px] text-club-muted tracking-widest uppercase mt-1">Urban footprint year</div>
       </div>
 
       <!-- Playback + Slider -->
@@ -184,8 +185,8 @@
   </div>
 
   <!-- Tutorial Modal -->
-  <div id="tutorial-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm panel-transition">
-    <div class="glass-panel max-w-2xl w-full rounded-[32px] p-12 relative text-center">
+  <div id="tutorial-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm panel-transition p-4">
+    <div class="glass-panel max-w-2xl w-full rounded-2xl sm:rounded-[32px] p-6 sm:p-12 relative text-center max-h-[90vh] overflow-y-auto">
       <div class="w-24 h-24 mx-auto bg-club-gold/10 rounded-full flex items-center justify-center mb-8 border border-club-gold/30">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-club-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
       </div>
@@ -307,11 +308,11 @@
       attributionControl: true
     });
 
-    // ESRI World Imagery Basemap
+    // Google Satellite Basemap
     L.tileLayer(
-      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
       {
-        attribution: 'Tiles &copy; Esri',
+        attribution: 'Tiles &copy; Google',
         maxZoom: 19,
         minZoom: 8
       }
@@ -328,7 +329,7 @@
     // Native Map Watermark (pinned to geographic center)
     const watermarkIcon = L.divIcon({
       className: 'custom-map-watermark',
-      html: '<div class="font-serif text-white/20 tracking-[0.5em] uppercase font-bold drop-shadow-2xl select-none mix-blend-overlay pointer-events-none" style="font-size: 8rem; white-space: nowrap; transform: translate(-50%, -50%);">RAJSHAHI</div>',
+      html: '<div class="font-serif text-white/20 tracking-[0.5em] uppercase font-bold drop-shadow-2xl select-none mix-blend-overlay pointer-events-none" style="font-size: max(3rem, 10vw); white-space: nowrap; transform: translate(-50%, -50%);">RAJSHAHI</div>',
       iconSize: [0, 0],
       iconAnchor: [0, 0]
     });
@@ -622,6 +623,12 @@
         if(d) updateChart(i, parseFloat(d.area));
       }
       setEpoch(0);
+
+      // Hide stats panel by default on mobile to prevent overlapping
+      if (window.innerWidth < 640) {
+        document.getElementById('stats-panel').classList.add('hidden-left');
+        document.getElementById('toggle-stats-btn').querySelector('svg').classList.add('rotate-180');
+      }
     });
   </script>
 </body>
