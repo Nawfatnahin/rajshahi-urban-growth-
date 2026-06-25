@@ -8,7 +8,7 @@
 
 ## 📖 About
 
-This observatory transforms dense, multi-decade satellite data into an elegant, human-readable web experience. Users can scrub through time and watch Rajshahi's peri-urban sprawl grow — stacked layer by layer — with real-time area calculations for every epoch.
+This observatory transforms dense, multi-decade satellite data into an elegant, human-readable web experience. Users can scrub through time and watch Rajshahi's peri-urban sprawl grow — stacked layer by layer with real-time area calculations for every epoch.
 
 > *Note: This application including UI design, mapping logic and data integration was developed using modern AI-assisted workflows, with custom data integration, visualization design and project direction by the author.*
 
